@@ -21,7 +21,7 @@ def handle_event(event):
     unstake_timestamp = event['args']['unstakeTimestamp']
 
     block = w3.eth.get_block(block_number)
-    event_timestamp = block.timestamp
+    event_timestamp = block['timestamp']
 
     amount_staked_eth = amount_staked_wei / 10 ** 18
 
@@ -36,21 +36,26 @@ def handle_event(event):
 
 
 def start_history_fetcher():
+    logger.info('started fetching history')
     last_processed_block = get_last_stake().block_number if get_last_stake() else START_BLOCK
-    latest_block = w3.eth.block_number
 
-    if last_processed_block < latest_block:
-        events_to_process = fetch_staked_events(last_processed_block + 1, latest_block)
+    staked_event_filter = contract.events.Staked.create_filter(fromBlock=START_BLOCK)
+    events = staked_event_filter.get_all_entries()
+    latest_block_number = events[-1]['blockNumber']
+
+    if int(last_processed_block) < int(latest_block_number):
+        events_to_process = fetch_staked_events(last_processed_block, latest_block_number)
+        logger.info(f'last block in DB: {last_processed_block}, last block on contract: {latest_block_number}')
+
         for event in events_to_process:
+            logger.info(f'event to handle: {event}')
             handle_event(event)
-        logger.info(f"Processed historical events up to block {latest_block}")
+        logger.info(f"Processed historical events up to block {latest_block_number}")
 
 
 def fetch_staked_events(start_block, end_block):
-    staked_event_filter = contract.events.Staked.create_filter(
-        fromBlock=start_block,
-        toBlock=end_block
-    )
+    staked_event_filter = contract.events.Staked.create_filter(fromBlock=start_block, toBlock=end_block)
+    logger.info(f'there some events {staked_event_filter.get_all_entries()}')
     return staked_event_filter.get_all_entries()
 
 
@@ -60,11 +65,12 @@ def start_event_listener():
 
     while True:
         try:
-            new_entries = staked_event_filter.get_new_entries()
-            for event in new_entries:
+            logger.info('started listening to new events')
+            events = staked_event_filter.get_new_entries()
+            for event in events:
                 handle_event(event)
-            if new_entries:
-                logger.info(f"Processed {len(new_entries)} new events.")
+            if events:
+                logger.info(f"Processed {len(events)} new events.")
             time.sleep(60)
         except Exception as e:
             logger.error(f"Error processing new events: {e}")

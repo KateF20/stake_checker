@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from .models import Base, Stake
 from settings.settings import DB_USERNAME, DB_PASSWORD, DB_NAME, EXCHANGE_RATE
 
-engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@localhost/{DB_NAME}')
+engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@db/{DB_NAME}')
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
