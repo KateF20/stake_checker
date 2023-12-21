@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 
 from .models import Base, Stake
@@ -47,3 +47,10 @@ def get_last_stake():
     last_stake = session.query(Stake).order_by(Stake.id.desc()).first()
     session.close()
     return last_stake
+
+
+def get_total_staked():
+    session = Session()
+    total_staked = session.query(func.sum(Stake.amount_staked)).scalar()
+    session.close()
+    return total_staked if total_staked is not None else 0
