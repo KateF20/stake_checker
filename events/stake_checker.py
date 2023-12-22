@@ -12,6 +12,13 @@ contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+new_stake_callback = None
+
+
+def set_new_stake_callback(callback):
+    global new_stake_callback
+    new_stake_callback = callback
+
 
 def handle_event(event):
     block_number = event['blockNumber']
@@ -33,6 +40,9 @@ def handle_event(event):
         unstake_timestamp,
         event_timestamp
     )
+
+    if new_stake_callback:
+        new_stake_callback()
 
 
 def start_history_fetcher():
@@ -70,6 +80,7 @@ def start_event_listener():
             for event in events:
                 handle_event(event)
             if events:
+                is_new_stake = True
                 logger.info(f"Processed {len(events)} new events.")
             time.sleep(60)
         except Exception as e:

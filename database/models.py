@@ -17,8 +17,10 @@ class Stake(Base):
     usd_value = Column(Numeric)
     timestamp = Column(DateTime)
 
-    # def calculate_duration(self, tx_timestamp):
-    #     if self.unstake_timestamp and tx_timestamp:
-    #         self.duration = self.unstake_timestamp - tx_timestamp
-    #     else:
-    #         self.duration = None
+
+class Subscriber(Base):
+
+    __tablename__ = 'subscribers'
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(BigInteger)
+
