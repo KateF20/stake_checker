@@ -1,3 +1,4 @@
+import time
 import asyncio
 import logging
 import telegram
@@ -7,11 +8,12 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from settings.settings import BOT_TOKEN
 from message import generate_stake_message
 from database.database import remove_subscriber, add_subscriber, is_subscribed, get_all_subscribers
-from events.stake_checker import start_history_fetcher, start_event_listener, set_new_stake_callback
+from events.stake_checker import start_history_fetcher, start_event_listener, set_new_stake_callback, new_stake_event
 
 
 class Bot:
     def __init__(self):
+        self.new_stake_event = new_stake_event
         self.application = ApplicationBuilder().token(BOT_TOKEN).build()
         self.add_handlers()
         self.start_stake_checker()
@@ -28,18 +30,24 @@ class Bot:
         self.start_stake_checker()
         self.application.run_polling()
 
+    def check_new_stakes(self):
+        while True:
+            self.new_stake_event.wait()
+            asyncio.run(self.handle_new_stake())
+            self.new_stake_event.clear()
+
     def start_stake_checker(self):
         self.history_thread = threading.Thread(target=start_history_fetcher)
         self.listener_thread = threading.Thread(target=start_event_listener)
         self.history_thread.start()
         self.listener_thread.start()
+        threading.Thread(target=self.check_new_stakes).start()
 
     async def handle_new_stake(self):
         message = generate_stake_message()
         await self.broadcast_message(message)
 
     async def broadcast_message(self, message: str):
-        message = generate_stake_message()
         subscriber_ids = get_all_subscribers()
         for chat_id in subscriber_ids:
             try:
@@ -55,7 +63,9 @@ class Bot:
         await update.message.reply_text(f"Your chat id is: {chat_id}")
 
     async def handle_get_last_stake(self, update: telegram.Update, context: ContextTypes.DEFAULT_TYPE):
+        logging.info("there's a new stake")
         message = generate_stake_message()
+        logging.info(f'new message is: {message}')
         await update.message.reply_text(message)
 
     async def handle_subscribe(self, update: telegram.Update, context: ContextTypes.DEFAULT_TYPE):
