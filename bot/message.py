@@ -23,7 +23,7 @@ def generate_stake_message():
         logging.info(f'total staked usd: {total_staked_usd}, exchange rate is: {EXCHANGE_RATE}')
 
         message = (
-            f"NEW $PAAL STAKE!\n\n"
+            f"New AIX Stake!\n\n"
             f"🤖 Amount Staked\n"
             f"{amount_staked_eth:.2e} ETH| ${last_stake.usd_value:.2e}\n\n"
             f"⏰ Duration {duration_days} days\n\n"
