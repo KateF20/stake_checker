@@ -8,6 +8,7 @@ from settings.settings import CONTRACT_ABI, CONTRACT_ADDRESS, START_BLOCK, PROVI
 
 w3 = Web3(Web3.HTTPProvider(PROVIDER_URL))
 contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
+total_staked = contract.functions.totalStaked().call() / 10 ** 18
 
 new_stake_event = threading.Event()
 

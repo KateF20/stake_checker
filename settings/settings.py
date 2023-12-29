@@ -18,7 +18,7 @@ with abi_path.open() as abi_file:
 PROVIDER_URL = getenv('PROVIDER_URL')
 CONTRACT_ADDRESS = getenv('CONTRACT_ADDRESS')
 START_BLOCK = getenv('START_BLOCK')
-EXCHANGE_RATE = 2208.22
+TOKEN_ID = getenv('TOKEN_ID')
 
 # db settings
 DB_NAME = getenv('DB_NAME')

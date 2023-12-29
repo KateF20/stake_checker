@@ -1,17 +1,15 @@
 import logging
 from datetime import datetime
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from .aix_to_usd import price_data
 from .models import Base, Stake, Subscriber
-from settings.settings import DB_USERNAME, DB_PASSWORD, DB_NAME, EXCHANGE_RATE
+from settings.settings import DB_USERNAME, DB_PASSWORD, DB_NAME
 
 engine = create_engine(f'postgresql://{DB_USERNAME}:{DB_PASSWORD}@localhost:5432/{DB_NAME}')
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 def insert_stake_event_into_database(block_number, user_address, stake_id,
@@ -22,7 +20,7 @@ def insert_stake_event_into_database(block_number, user_address, stake_id,
         session.close()
         return
 
-    amount_in_usd = amount_staked / 10 ** 18 * EXCHANGE_RATE
+    amount_in_usd = amount_staked / 10 ** 18 * price_data
 
     try:
         new_stake = Stake(
@@ -52,13 +50,6 @@ def get_last_stake():
     return last_stake
 
 
-def get_total_staked():
-    session = Session()
-    total_staked = session.query(func.sum(Stake.amount_staked)).scalar()
-    session.close()
-    return total_staked if total_staked is not None else 0
-
-
 def is_subscribed(chat_id):
     session = Session()
     exists = session.query(Subscriber).filter_by(chat_id=chat_id).first() is not None
@@ -75,7 +66,7 @@ def add_subscriber(chat_id):
         logging.info(f'new subscriber {new_subscriber.chat_id} added, success: {session.add(new_subscriber)}')
         session.commit()
     except Exception as e:
-        logger.error(f"Error adding subscriber: {e}")
+        logging.error(f"Error adding subscriber: {e}")
         session.rollback()
     finally:
         session.close()
@@ -91,7 +82,7 @@ def remove_subscriber(chat_id):
             logging.info(f'subscriber {subscriber.chat_id} removed, success: {session.delete(subscriber)}')
             session.commit()
         except Exception as e:
-            logger.error(f"Error removing subscriber: {e}")
+            logging.error(f"Error removing subscriber: {e}")
             session.rollback()
     session.close()
 
